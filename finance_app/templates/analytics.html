@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ru">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Аналитика</title>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    </head>
+    <body>
+        <h2>Анализ доходов и расходов</h2>
+
+        <h3>Расходы по категориям</h3>
+        <canvas id="expenseChart"></canvas>
+
+        <h3>Доходы по категориям</h3>
+        <canvas id="incomeChart"></canvas>
+
+        <h3>Рекомендация</h3>
+        <p>{{ recommendation }}</p>
+
+        <script id="expense-labels" type="application/json">{{ expense_labels|safe }}</script>
+        <script id="expense-values" type="application/json">{{ expense_values|safe }}</script>
+        <script id="income-labels" type="application/json">{{ income_labels|safe }}</script>
+        <script id="income-values" type="application/json">{{ income_values|safe }}</script>
+
+        <script>
+            const expenseLabels = JSON.parse(document.getElementById("expense-labels").textContent);
+            const expenseValues = JSON.parse(document.getElementById("expense-values").textContent);
+            const incomeLabels = JSON.parse(document.getElementById("income-labels").textContent);
+            const incomeValues = JSON.parse(document.getElementById("income-values").textContent);
+
+            const expenseData = {
+                labels: expenseLabels,
+                datasets: [{
+                    label: "Расходы",
+                    data: expenseValues,
+                    backgroundColor: ["red", "orange", "yellow", "pink", "brown"]
+                }]
+            };
+
+            const incomeData = {
+                labels: incomeLabels,
+                datasets: [{
+                    label: "Доходы",
+                    data: incomeValues,
+                    backgroundColor: ["green", "blue", "purple", "cyan", "lime"]
+                }]
+            };
+
+            new Chart(document.getElementById("expenseChart"), {
+                type: "pie",
+                data: expenseData,
+                options: {
+                    responsive: false,
+                    maintainAspectRatio: false,
+                    width: 300,
+                    height: 300
+                }
+            });
+
+            new Chart(document.getElementById("incomeChart"), {
+                type: "pie",
+                data: incomeData,
+                options: {
+                    responsive: false,
+                    maintainAspectRatio: false,
+                    width: 300,
+                    height: 300
+                }
+            });
+        </script> 
+    </body>
+</html>

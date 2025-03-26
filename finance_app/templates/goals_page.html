@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="ru">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Финансовые цели</title>
+    </head>
+    <body>
+        <h2>Финансовые цели</h2>
+
+        <h3>Добавить новую цель</h3>
+        <form method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit">Создать</button>
+        </form>
+
+        <hr>
+
+        <h3>Ваши цели</h3>
+        {% for goal in goals %}
+            <div>
+                <h4>{{ goal.name }}</h4>
+                <p>Целевая сумма: {{ goal.target_amount }} руб.</p>
+                <p>Накоплено: {{ goal.saved_amount }} руб.</p>
+                <p>Осталось накопить: {{ goal.remaining_amount }} руб.</p>
+                <p>Прогресс: {{ goal.progress }}%</p>
+                <progress value="{{ goal.progress }}" max="100"></progress>
+
+                <p>Процент от дохода: {{ goal.saving_percentage }}%</p>
+                <p>Цель активна: {{ goal.is_active|yesno:"Да,Нет" }}</p>
+
+                {% if goal.is_active %}
+                    <form action="{% url 'toggle_active' goal.id %}" method="post">
+                        {% csrf_token %}
+                        <button type="submit" style="background-color: red; color: white;">Деактивировать</button>
+                    </form>
+                {% else %}
+                <form action="{% url 'toggle_active' goal.id %}" method="post">
+                    {% csrf_token %}
+                    <button type="submit" style="background-color: green; color: white;">Активировать</button>
+                </form>
+                {% endif %}
+            </div>
+            <hr>
+        {% empty %}
+            <p>У вас пока нет финансовых целей.</p>
+        {% endfor %}
+    </body>
+</html>

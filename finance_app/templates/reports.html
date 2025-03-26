@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="ru">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Отчеты</title>
+    </head>
+    <body>
+        <h2>Отчет за 
+            {% if period == "month" %}месяц{% elif period == "quarter" %}квартал{% else %}год{% endif %}
+        </h2>
+
+        <form method="get">
+            <label>Выберите период:</label>
+            <select name="period" onchange="this.form.submit()">
+                <option value="month" {% if period == "month" %}selected{% endif %}>Месяц</option>
+                <option value="quarter" {% if period == "quarter" %}selected{% endif %}>Квартал</option>
+                <option value="year" {% if period == "year" %}selected{% endif %}>Год</option>
+            </select>
+        </form>
+
+        {% if transactions %}
+            <table border="1">
+                <tr>
+                    <th>Дата</th>
+                    <th>Тип</th>
+                    <th>Категория</th>
+                    <th>Сумма</th>
+                </tr>
+                {% for transaction in transactions %}
+                <tr>
+                    <td>{{ transaction.date|date:"d.m.Y" }}</td>
+                    <td>{{ transaction.get_type_display }}</td>
+                    <td>{{ transaction.category }}</td>
+                    <td>{{ transaction.amount }}</td>
+                </tr>
+                {% endfor %}
+            </table>
+            <br>
+            <a href="{% url 'export_csv' %}?period={{ period }}">Скачать отчет в CSV</a>
+        {% else %}
+            <p>Нет данных за этот период.</p>
+        {% endif %}
+
+        <hr>
+
+        <h2>Импорт данных из CSV</h2>
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <input type="file" name="csv_file" required>
+            <button type="submit">Загрузить</button>
+        </form>
+
+        {% if error %}
+            <div style="color: red; font-weight: bold;">
+                {{ error }}
+            </div>
+        {% endif %}
+    </body>
+</html>
