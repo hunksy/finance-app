@@ -1,12 +1,14 @@
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
-from django import forms  
+from django import forms
 from .models import Transaction, Goal
 
-class RegisterForm(UserCreationForm):  
-    class Meta:  
-        model = User  
+
+class RegisterForm(UserCreationForm):
+    class Meta:
+        model = User
         fields = ["username", "email", "password1", "password2"]
+
 
 class TransactionForm(forms.ModelForm):
     class Meta:
@@ -26,8 +28,10 @@ class TransactionForm(forms.ModelForm):
         amount = self.cleaned_data["amount"]
         if amount <= 0:
             raise forms.ValidationError("Сумма должна быть положительной.")
+
         return amount
-    
+
+
 class GoalForm(forms.ModelForm):
     class Meta:
         model = Goal

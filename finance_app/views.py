@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect
 from django.http import HttpResponse
-from django.contrib.auth import login  
+from django.contrib.auth import login
 from .forms import RegisterForm, TransactionForm, GoalForm
 from django.contrib.auth.decorators import login_required
 from .models import Transaction, Goal
@@ -12,30 +12,36 @@ import csv
 import io
 import chardet
 
-def register(request):  
-    if request.method == "POST":  
-        form = RegisterForm(request.POST)  
-        if form.is_valid():  
-            user = form.save()  
+
+def register(request):
+    if request.method == "POST":
+        form = RegisterForm(request.POST)
+        if form.is_valid():
+            user = form.save()
             login(request, user)
-            return redirect("profile")  
-    else:  
-        form = RegisterForm()  
+            return redirect("profile")
+    else:
+        form = RegisterForm()
     return render(request, "register.html", {"form": form})
+
 
 @login_required
 def profile(request):
     return render(request, "profile.html")
 
+
 def home(request):
     return redirect("profile")
+
 
 def update_goal(user, income_amount):
     active_goals = Goal.objects.filter(user=user, is_active=True)
 
     for goal in active_goals:
         saved_amount = (goal.saving_percentage / 100) * income_amount
-        Goal.objects.filter(id=goal.id).update(saved_amount=F("saved_amount") + saved_amount)
+        Goal.objects.filter(id=goal.id).update(
+            saved_amount=F("saved_amount") + saved_amount)
+
 
 @login_required
 def transactions_view(request):
@@ -47,15 +53,20 @@ def transactions_view(request):
             transaction.save()
 
             if transaction.type == "income":
-                active_goals = Goal.objects.filter(user=request.user, is_active=True)
+                active_goals = Goal.objects.filter(
+                    user=request.user, is_active=True)
 
                 for goal in active_goals:
-                    saved_amount = round((goal.saving_percentage / 100) * transaction.amount)
-                    Goal.objects.filter(id=goal.id).update(saved_amount=F("saved_amount") + saved_amount)
+                    saved_amount = round(
+                        (goal.saving_percentage / 100) * transaction.amount)
+                    Goal.objects.filter(id=goal.id).update(
+                        saved_amount=F("saved_amount") + saved_amount)
 
                     goal.refresh_from_db()
                     if goal.progress() >= 50:
-                        messages.info(request, f"Вы достигли {int(goal.progress())}% вашей цели: {goal.name}!")
+                        messages.info(request,
+                                      f'''Вы достигли {int(goal.progress())}%
+                                      вашей цели: {goal.name}!''')
 
             return redirect("transactions")
 
@@ -71,7 +82,7 @@ def transactions_view(request):
     if start_date and end_date:
         transactions = transactions.filter(date__range=[start_date, end_date])
     if category:
-        transactions = transactions.filter(category=category)
+        transactions = transactions.filter(category=category.capitalize())
     if transaction_type:
         transactions = transactions.filter(type=transaction_type)
 
@@ -79,6 +90,7 @@ def transactions_view(request):
         "form": form,
         "transactions": transactions,
     })
+
 
 @login_required
 def goals_page(request):
@@ -96,19 +108,23 @@ def goals_page(request):
 
     return render(request, "goals_page.html", {"goals": goals, "form": form})
 
+
 @login_required
 def toggle_active(request, goal_id):
     goal = Goal.objects.get(id=goal_id, user=request.user)
-    goal.is_active = not(goal.is_active)
+    goal.is_active = not (goal.is_active)
     goal.save()
     return redirect("goals_page")
+
 
 @login_required
 def analytics(request):
     transactions = Transaction.objects.filter(user=request.user)
 
-    expenses = transactions.filter(type="expense").values("category").annotate(total=Sum("amount"))
-    incomes = transactions.filter(type="income").values("category").annotate(total=Sum("amount"))
+    expenses = transactions.filter(type="expense").values("category").annotate(
+        total=Sum("amount"))
+    incomes = transactions.filter(type="income").values("category").annotate(
+        total=Sum("amount"))
 
     expense_labels = [item["category"] for item in expenses]
     expense_values = [item["total"] for item in expenses]
@@ -117,8 +133,11 @@ def analytics(request):
     income_values = [item["total"] for item in incomes]
 
     if expenses:
-        max_expense = max(expenses, key=lambda x: x["total"])
-        recommendation = f"Вы тратите слишком много на {max_expense['category']}. Попробуйте сократить расходы."
+        max_expense = max(expenses,
+                          key=lambda x: x["total"])
+        recommendation = f'''Вы тратите слишком много
+            на {max_expense['category']}.
+            Попробуйте сократить расходы.'''
     else:
         recommendation = "Нет данных о расходах."
 
@@ -130,6 +149,7 @@ def analytics(request):
         "recommendation": recommendation,
     })
 
+
 def reports_view(request):
     period = request.GET.get("period", "month")
 
@@ -139,12 +159,19 @@ def reports_view(request):
         csv_file = request.FILES["csv_file"]
 
         if not csv_file.name.endswith(".csv"):
-            return render(request, "reports.html", {"error": "Неверный формат файла", "transactions": transactions, "period": period})
+            return render(
+                request,
+                "reports.html",
+                {"error": "Неверный формат файла",
+                 "transactions": transactions,
+                 "period": period}
+            )
 
         raw_data = csv_file.read()
         detected_encoding = chardet.detect(raw_data)["encoding"]
 
-        decoded_file = io.StringIO(raw_data.decode(detected_encoding, errors="replace"))
+        decoded_file = io.StringIO(raw_data.decode(
+            detected_encoding, errors="replace"))
 
         reader = csv.reader(decoded_file, delimiter=",")
         next(reader)
@@ -152,28 +179,47 @@ def reports_view(request):
         for row in reader:
             try:
                 date = datetime.strptime(row[0], "%d.%m.%Y")
-                type = "income" if row[1].strip().lower() == "доход" else "expense"
+                if row[1].strip().lower() == "доход":
+                    type = "income"
+                else:
+                    type = "expense"
                 category = row[2].strip()
                 amount = float(row[3].replace(",", "."))
 
-                Transaction.objects.create(user=request.user, date=date, type=type, category=category, amount=amount)
+                Transaction.objects.create(
+                    user=request.user,
+                    date=date,
+                    type=type,
+                    category=category,
+                    amount=amount
+                )
             except Exception as e:
                 print(f"Ошибка при обработке строки: {row} - {e}")
 
         return redirect("reports")
 
-    return render(request, "reports.html", {"transactions": transactions, "period": period})
+    return render(
+        request,
+        "reports.html",
+        {"transactions": transactions, "period": period}
+    )
+
 
 @login_required
 def export_csv(request):
     period = request.GET.get("period", "month")
-    user_transactions = Transaction.objects.filter(user=request.user)
+    user_transactions = Transaction.objects.filter(
+        user=request.user
+    )
 
     today = datetime.today()
     if period == "month":
         start_date = today.replace(day=1)
     elif period == "quarter":
-        start_date = today.replace(month=((today.month - 1) // 3) * 3 + 1, day=1)
+        start_date = today.replace(
+            month=((today.month - 1) // 3) * 3 + 1,
+            day=1
+        )
     elif period == "year":
         start_date = today.replace(month=1, day=1)
     else:
@@ -182,11 +228,17 @@ def export_csv(request):
     transactions = user_transactions.filter(date__gte=start_date)
 
     response = HttpResponse(content_type="text/csv; charset=utf-8-sig")
-    response["Content-Disposition"] = f'attachment; filename="report_{period}.csv"'
+    response["Content-Disposition"] = f'''attachment;
+        filename="report_{period}.csv"'''
 
     writer = csv.writer(response)
     writer.writerow(["Дата", "Тип", "Категория", "Сумма"])
     for transaction in transactions:
-        writer.writerow([transaction.date.strftime("%d.%m.%Y"), transaction.get_type_display(), transaction.category, transaction.amount])
+        writer.writerow([
+            transaction.date.strftime("%d.%m.%Y"),
+            transaction.get_type_display(),
+            transaction.category,
+            transaction.amount
+        ])
 
     return response

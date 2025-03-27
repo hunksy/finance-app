@@ -7,10 +7,13 @@
     </head>
     <body>
         <h1>Профиль пользователя</h1>
-
         {% if user.is_authenticated %}
             <p>Имя пользователя: {{ user.username }}</p>
             <p>Email: {{ user.email }}</p>
+            <p><a href="{% url 'transactions' %}">Перейти на страницу транзакций</a></p>
+            <p><a href="{% url 'goals_page' %}">Перейти на страницу целей</a></p>
+            <p><a href="{% url 'analytics' %}">Перейти на страницу аналитики</a></p>
+            <p><a href="{% url 'reports' %}">Перейти на страницу отчетов</a></p>
             <p><a href="{% url 'logout' %}">Выйти</a></p>
         {% else %}
             <p>Вы не авторизованы. <a href="{% url 'login' %}">Войти</a></p>
